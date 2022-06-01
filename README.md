@@ -1,2 +1,2 @@
-# learning-common-lisp
+# lisp-intro-programming-activities
 Materials for learning Common Lisp.
