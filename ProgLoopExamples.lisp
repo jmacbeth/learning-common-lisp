@@ -1,6 +1,6 @@
 ;; Converting PROG LOOPS
 ;; ABK 06/02/22: This is a file containing examples of how to convert PROG LOOPS into more elegant forms in Lisp.
-;; These are typical patterns that I have found in our code and their typical solutions. Small sdjustments
+;; These are typical patterns that I have found in our code and their typical solutions. Small adjustments
 ;; may be needed depending on the particular instance.
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
