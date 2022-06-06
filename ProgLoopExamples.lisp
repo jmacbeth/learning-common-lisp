@@ -5,6 +5,25 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
+;;;  EX #0: DOLIST
+;;;
+
+;;; BEFORE
+;; This is the pattern for a typical for/of or for/in loop, i.e. a loop that iterates over items of a list.
+;; We can convert this construction into a DOLIST.
+
+(SETQ MYLIST '(A B C D E F))
+ (PROG (&V &L1 X)
+              (SETQ &L1 MYLIST)
+         LOOP (COND ((NULL &L1) (RETURN &V)))
+              (SETQ X (CAR &L1))
+              (SETQ &L1 (CDR &L1))
+              (SETQ &V (PRINT X))
+              (GO LOOP))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
 ;;;  EX #1: DOLIST
 ;;;
 
