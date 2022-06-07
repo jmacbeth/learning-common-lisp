@@ -131,20 +131,22 @@ LOOP (COND ((*GREAT &L1 &UPPER1) (RETURN &V))) ; Begin loop. When &L1 > &UPPER1,
 ;; This is the pattern for a typical loop whose return value is a list of accumulated results from each loop iteration.
 ;; We can convert this into a MAPCAN construction.
 
-(PROG (&V &VV &L1 X) 
-       (SETQ &L1 NODELIST)
+(PROG (&V &VV &L1 X) ; Define local variables for this PROG 
+       (SETQ &L1 NODELIST) ; Set local variable &L1 to parameter value NODELIST. This is the list we will loop over.
        (SETQ &V (SETQ &VV (LIST NIL)))
-  LOOP (COND ((NULL &L1) (RETURN (CDR &V))))
-       (SETQ X (CAR &L1))
-       (SETQ &L1 (CDR &L1))
-       (NCONC &VV (SETQ &VV (LIST (CONS X (SYMBOL-PLIST X)))))
-    (GO LOOP))
-  (LET ((PROPLIST '()))
-   (DOLIST (X NODELIST PROPLIST)
-     (SETQ PROPLIST (APPEND PROPLIST (LIST (CONS X (SYMBOL-PLIST X)))))))
+  LOOP (COND ((NULL &L1) (RETURN (CDR &V)))) ; Begin loop. If the list is empty, i.e. we looped over every item, exit loop.
+       (SETQ X (CAR &L1)) ; X is the item we're currently iterating over.
+       (SETQ &L1 (CDR &L1)) ; &L1 is set to the rest of the list after the first item, thus the next iteration will be over the next item, and so on.
+       (NCONC &VV (SETQ &VV (LIST (CONS X (SYMBOL-PLIST X))))) ; Loop body. Append the result of this iteration to a list.
+    (GO LOOP)) ; Go back up to LOOP
 
 ;;; AFTER
+;; In this instance, MAPCAN takes the form: (MAPCAN (LAMBDA (item) loop-body) list)
+;; The information we need to extract from the original PROG LOOP is:
+    ;; (1) the current item of the list. This is indicated by the first SETQ command proceeding the LOOP COND.
+    ;; (2) the loop body. This is indicated by the S-expression(s) nested immediately inside the SETQ &VV.
+    ;; (3) the list being looped over. This is indicated by the second SETQ command proceeding the LOOP COND.
 
-(MAPCAN (LAMBDA (X) 
-    (LIST (CONS X (SYMBOL-PLIST X))))
-    NODELIST))
+(MAPCAN (LAMBDA (X) ; For every item X
+    (LIST (CONS X (SYMBOL-PLIST X)))) ; loop these commands
+    NODELIST)) ; in list NODELIST
