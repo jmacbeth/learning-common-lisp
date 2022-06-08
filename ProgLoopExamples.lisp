@@ -21,6 +21,17 @@
               (SETQ &V (PRINT X))
               (GO LOOP))
 
+;; NOTES ABOUT PROG
+;; PROG is short for "program".  It is "the program" feature, and lets you
+;; write code that looks more like "imperative" programming language programs (e.g. C, C++, Java, Python, Fortran)
+;; prog: allows you to bind local variables that only exist inside the PROG, followed by a series of 
+;; forms which are evaluated in order.
+;; PROG allows GO statements which cause execution of the PROG to jump unconditionally to a label within the PROG
+;; (Similar to GOTO in Fortran, or JUMP instructions in assembly language)
+;; and it allows RETURN statements which exit out of the PROG.
+;; For the PROG above, the first item after the PROG keyword, (&V &L1 X), establishes these three variables
+;; as ...
+
 ;;; AFTER
 ;; DOLIST takes the form: (DOLIST (item list) (loop-body))
 ;; The information we need to extract from the original PROG LOOP is:
@@ -98,29 +109,21 @@
 ;;;
 
 ;;; BEFORE
-;; This is the typical pattern for a loop that increments a value per iteration. 
-;; We can convert this into a DO construction.
 
-(PROG (&V &L1 &UPPER1 I) ; Define local variables for this PROG
-    (SETQ &L1 1) ; Set the value at which we will begin incrementing.
-    (SETQ &UPPER1 N1) ; Set the value at which the loop will terminate.
-LOOP (COND ((*GREAT &L1 &UPPER1) (RETURN &V))) ; Begin loop. When &L1 > &UPPER1, terminate loop.
-    (SETQ I &L1) ; Initialize the value which we will increment.
-    (SETQ &L1 (ADD1 &L1)) ; Add 1 to our incrementing variable.
-    (SETQ &V (SETF (AREF ALLPS I) (CONS (READ *GLOBAL-FILE-DESCRIPTOR*) NIL))) ; Loop body
-    (GO LOOP)) ; Go back up to LOOP.
+(PROG (&V &L1 &UPPER1 I)
+    (SETQ &L1 1)
+    (SETQ &UPPER1 N1)
+LOOP (COND ((*GREAT &L1 &UPPER1) (RETURN &V)))
+    (SETQ I &L1)
+    (SETQ &L1 (ADD1 &L1))
+    (SETQ &V (SETF (AREF ALLPS I) (CONS (READ *GLOBAL-FILE-DESCRIPTOR*) NIL)))
+    (GO LOOP))
 
 ;;; AFTER
-;; DO takes the form (DO (var1 (var1change), ..., varN (varNchange)) (end-condition) loop-body)
-;; The information we need to extract from the original PROG LOOP is:
-    ;; (1) the incrementing variable and its initial value. This is by indicated by the expressions (SETQ I &L1) and (SETQ &L1 1), respectively.
-    ;; (2) the value by which the variable will increment. This is indicated by the expression (SETQ &L1 (ADD1 &L1)).
-    ;; (3) the terminating condition. This is indicated by the expression (COND ((*GREAT &L1 &UPPER1) (RETURN &V))).
-    ;; (4) the loop body. This is indicated by the S-expression(s) nested immediately inside the SETQ &V. 
 
-(DO ((I 1 (1+ I))) ; Initialize incrementing variable I to 1. For every iteration, I will increment by 1.
-    ((EQUAL I N1)) ; Terminate when variable I equals variable N1.
-    (SETF (AREF ALLPS I) (CONS (READ *GLOBAL-FILE-DESCRIPTOR*) NIL))) ; Loop body.
+(DO ((I 1 (1+ I)))
+    ((EQUAL I N1))
+    (SETF (AREF ALLPS I) (CONS (READ *GLOBAL-FILE-DESCRIPTOR*) NIL)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -128,25 +131,21 @@ LOOP (COND ((*GREAT &L1 &UPPER1) (RETURN &V))) ; Begin loop. When &L1 > &UPPER1,
 ;;;
 
 ;;; BEFORE
-;; This is the pattern for a typical loop whose return value is a list of accumulated results from each loop iteration.
-;; We can convert this into a MAPCAN construction.
 
-(PROG (&V &VV &L1 X) ; Define local variables for this PROG 
-       (SETQ &L1 NODELIST) ; Set local variable &L1 to parameter value NODELIST. This is the list we will loop over.
+(PROG (&V &VV &L1 X)
+       (SETQ &L1 NODELIST)
        (SETQ &V (SETQ &VV (LIST NIL)))
-  LOOP (COND ((NULL &L1) (RETURN (CDR &V)))) ; Begin loop. If the list is empty, i.e. we looped over every item, exit loop.
-       (SETQ X (CAR &L1)) ; X is the item we're currently iterating over.
-       (SETQ &L1 (CDR &L1)) ; &L1 is set to the rest of the list after the first item, thus the next iteration will be over the next item, and so on.
-       (NCONC &VV (SETQ &VV (LIST (CONS X (SYMBOL-PLIST X))))) ; Loop body. Append the result of this iteration to a list.
-    (GO LOOP)) ; Go back up to LOOP
+  LOOP (COND ((NULL &L1) (RETURN (CDR &V))))
+       (SETQ X (CAR &L1))
+       (SETQ &L1 (CDR &L1))
+       (NCONC &VV (SETQ &VV (LIST (CONS X (SYMBOL-PLIST X)))))
+    (GO LOOP))
+  (LET ((PROPLIST '()))
+   (DOLIST (X NODELIST PROPLIST)
+     (SETQ PROPLIST (APPEND PROPLIST (LIST (CONS X (SYMBOL-PLIST X)))))))
 
 ;;; AFTER
-;; In this instance, MAPCAN takes the form: (MAPCAN (LAMBDA (item) loop-body) list)
-;; The information we need to extract from the original PROG LOOP is:
-    ;; (1) the current item of the list. This is indicated by the first SETQ command proceeding the LOOP COND.
-    ;; (2) the loop body. This is indicated by the S-expression(s) nested immediately inside the SETQ &VV.
-    ;; (3) the list being looped over. This is indicated by the second SETQ command proceeding the LOOP COND.
 
-(MAPCAN (LAMBDA (X) ; For every item X
-    (LIST (CONS X (SYMBOL-PLIST X)))) ; loop these commands
-    NODELIST)) ; in list NODELIST
+(MAPCAN (LAMBDA (X)
+    (LIST (CONS X (SYMBOL-PLIST X))))
+    NODELIST))
